@@ -2,145 +2,290 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ponto Eletrônico — Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Ponto Eletrônico – DUO</title>
+  <meta name="theme-color" content="#0f172a" />
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;max-width:1100px;margin:20px auto;padding:10px}
-    .card{border:1px solid #ddd;padding:12px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
-    input,button{font-size:15px;padding:8px;margin-top:6px}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{border:1px solid #eee;padding:8px;text-align:left}
-    img.thumb{max-width:120px;border-radius:6px}
-    .controls{display:flex;gap:8px;align-items:center}
+    :root{
+      --bg:#0f172a; --panel:#111827; --ink:#e5e7eb; --muted:#94a3b8;
+      --line:#1f2937; --brand:#22c55e; --danger:#ef4444;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, "Noto Sans";
+      background:var(--bg); color:var(--ink); -webkit-tap-highlight-color:transparent;
+    }
+    .wrap{max-width:640px;margin:0 auto;padding:16px}
+    .card{
+      background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    h1{font-size:1.25rem;margin:0 0 12px}
+    .row{display:grid;gap:12px;margin:12px 0}
+    .grid-2{grid-template-columns:1fr 1fr}
+    label{font-size:.9rem;color:var(--muted)}
+    input, select{
+      width:100%; background:#0b1220; color:var(--ink);
+      border:1px solid var(--line); border-radius:12px; padding:12px; font-size:1rem;
+      outline:none;
+    }
+    input:focus, select:focus{border-color:#334155}
+    .help{font-size:.8rem;color:var(--muted)}
+    .btn{
+      appearance:none; border:0; border-radius:14px; padding:14px 16px; font-size:1rem; font-weight:600; width:100%;
+      cursor:pointer; transition:transform .04s ease, opacity .2s ease;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:var(--brand); color:#052e13}
+    .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--ink)}
+    .btn.danger{background:var(--danger)}
+    video, canvas, img{width:100%; border-radius:14px; background:#000}
+    .status{font-size:.85rem;color:var(--muted);margin-top:6px;min-height:1.2em}
+    .pill{display:inline-block;background:#0b1220;border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:.75rem;color:var(--muted)}
+    .footer{margin-top:16px;text-align:center;font-size:.75rem;color:var(--muted)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .hidden{display:none !important}
   </style>
 </head>
 <body>
-  <h1>Admin — Visualizar registros</h1>
-  <div class="card">
-    <p class="hint">Faça login para acessar os registros (autenticação via Firebase Email/Password).</p>
-    <div id="authArea" class="card" style="padding:10px">
-      <div id="userInfo"></div>
-      <div id="loginForm">
-        <label>Email (admin):</label><input id="email" value="osmar.coordenacaoduo@gmail.com" />
-        <label>Senha:</label><input id="password" type="password" autofocus />
-        <div class="controls"><button id="loginBtn">Entrar</button><button id="createBtn" style="display:none">Criar usuário (desabilitado)</button></div>
-        <div id="authStatus"></div>
+  <div class="wrap">
+    <div class="card">
+      <h1>📍 Ponto Eletrônico (DUO)</h1>
+      <div class="row">
+        <div>
+          <label for="empId">ID do funcionário</label>
+          <input id="empId" type="text" inputmode="numeric" placeholder="Ex.: 123" autocomplete="off" />
+        </div>
+        <div>
+          <label for="tipo">Tipo de registro</label>
+          <select id="tipo">
+            <option value="E">Entrada</option>
+            <option value="I">Início intervalo</option>
+            <option value="R">Retorno intervalo</option>
+            <option value="S">Saída</option>
+          </select>
+        </div>
       </div>
-      <div id="logoutArea" style="display:none">
-        <button id="logoutBtn">Sair</button>
-      </div>
-    </div>
 
-    <div id="recordsArea" style="display:none">
-      <h3>Registros recentes</h3>
-      <div id="list"></div>
+      <div class="row">
+        <div class="pill" id="clock">--/--/---- --:--:--</div>
+      </div>
+
+      <div class="row">
+        <label>Câmera (selfie)</label>
+        <video id="video" playsinline autoplay muted class="hidden"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <img id="preview" alt="Prévia da selfie" class="hidden" />
+        <div class="flex">
+          <button type="button" class="btn ghost" id="btnCamera">Ativar câmera</button>
+          <button type="button" class="btn" id="btnSnap">Tirar selfie</button>
+          <button type="button" class="btn danger" id="btnRefazer">Refazer</button>
+        </div>
+        <div class="status" id="camStatus"></div>
+      </div>
+
+      <div class="row grid-2">
+        <div>
+          <label>Localização</label>
+          <div class="pill" id="geo">Aguardando GPS…</div>
+          <div class="status" id="geoStatus"></div>
+        </div>
+        <div>
+          <label>Precisão</label>
+          <div class="pill" id="acc">—</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn primary" id="btnRegistrar">Registrar ponto</button>
+        <button type="button" class="btn ghost" id="btnZapFoto">Enviar via WhatsApp (com foto)</button>
+        <div class="help">Sem servidor: o envio sempre pedirá 1 toque de confirmação no WhatsApp.</div>
+      </div>
     </div>
+    <div class="footer">Feito para rodar em GitHub Pages (somente cliente). Nenhum dado é salvo no servidor.</div>
   </div>
 
-<script type="module">
-// ----------- IMPORTANT --------------
-// You MUST replace the firebaseConfig object below with your Firebase web app config.
-// See README.md for step-by-step instructions.
-// ------------------------------------
-
-const firebaseConfig = {
-  "apiKey": "AIzaSyA2DQ7G6LuR-xL8UY_R77iAYhe_UXOlp_Q",
-  "authDomain": "pontoduo-3ffef.firebaseapp.com",
-  "projectId": "pontoduo-3ffef",
-  "storageBucket": "pontoduo-3ffef.firebasestorage.app",
-  "messagingSenderId": "233995963349",
-  "appId": "1:233995963349:web:35b7d73cf8bbf9858d8b5c",
-  "measurementId": "G-B8W87KV66N"
-};
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// elements
-const emailEl = document.getElementById('email');
-const passEl = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const createBtn = document.getElementById('createBtn');
-const authStatus = document.getElementById('authStatus');
-const userInfo = document.getElementById('userInfo');
-const logoutBtn = document.getElementById('logoutBtn');
-const logoutArea = document.getElementById('logoutArea');
-const recordsArea = document.getElementById('recordsArea');
-const listDiv = document.getElementById('list');
-
-loginBtn.addEventListener('click', async ()=>{
-  authStatus.textContent = '';
-  try {
-    await signInWithEmailAndPassword(auth, emailEl.value, passEl.value);
-  } catch(err){
-    authStatus.textContent = 'Erro no login: ' + err.message;
-  }
-});
-
-createBtn.addEventListener('click', async ()=>{
-  const email = prompt('Email do novo usuário (admin):', emailEl.value || 'admin@exemplo.com');
-  const pass = prompt('Senha do novo usuário (guarde bem):', passEl.value || 'Senha@1234');
-  if(!email || !pass) return;
-  try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-    alert('Usuário criado com sucesso. Use-o para login.');
-  } catch(err){
-    alert('Erro ao criar usuário: ' + err.message);
-  }
-});
-
-logoutBtn.addEventListener('click', ()=> signOut(auth));
-
-onAuthStateChanged(auth, async (user)=>{
-  if(user){
-    userInfo.textContent = 'Conectado como: ' + (user.email || user.uid);
-    logoutArea.style.display = 'block';
-    recordsArea.style.display = 'block';
-    document.getElementById('loginForm').style.display = 'none';
-    authStatus.textContent = '';
-    await loadRecords();
-  } else {
-    userInfo.textContent = '';
-    logoutArea.style.display = 'none';
-    recordsArea.style.display = 'none';
-    document.getElementById('loginForm').style.display = 'block';
-    listDiv.innerHTML = '';
-  }
-});
-
-async function loadRecords(){
-  listDiv.innerHTML = '<em>Carregando...</em>';
-  try {
-    const col = collection(db, 'pontos');
-    const q = query(col, orderBy('timestamp', 'desc'), limit(200));
-    const snap = await getDocs(q);
-    if(snap.empty){
-      listDiv.innerHTML = '<div>Nenhum registro encontrado.</div>';
-      return;
+  <script>
+    // ------------------ Relógio ao vivo ------------------
+    const clockEl = document.getElementById('clock');
+    function pad(n){return String(n).padStart(2,'0')}
+    function nowBR(){
+      const d = new Date();
+      const dd = pad(d.getDate());
+      const mm = pad(d.getMonth()+1);
+      const yyyy = d.getFullYear();
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      const ss = pad(d.getSeconds());
+      return {display: `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`, iso: d.toISOString()};
     }
-    let html = '<table><thead><tr><th>ID</th><th>Data</th><th>Hora</th><th>Lat</th><th>Lon</th><th>Foto</th></tr></thead><tbody>';
-    snap.forEach(doc=>{
-      const d = doc.data();
-      const id = d.employeeId || '';
-      const date = d.date || '';
-      const time = d.time || '';
-      const lat = d.latitude || '';
-      const lon = d.longitude || '';
-      const photo = d.photoBase64 || '';
-      const imgTag = photo ? `<a href="${photo}" target="_blank"><img class="thumb" src="${photo}" /></a>` : '';
-      html += `<tr><td>${id}</td><td>${date}</td><td>${time}</td><td>${lat}</td><td>${lon}</td><td>${imgTag}</td></tr>`;
+    setInterval(()=>{ clockEl.textContent = nowBR().display; }, 500);
+
+    // ------------------ Geolocalização ------------------
+    const geoEl = document.getElementById('geo');
+    const accEl = document.getElementById('acc');
+    const geoStatus = document.getElementById('geoStatus');
+
+    let lastPosition = null;
+    function startGeolocation(){
+      if(!('geolocation' in navigator)){
+        geoStatus.textContent = 'Geolocalização não suportada neste dispositivo.';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>updateGeo(pos),
+        (err)=>geoStatus.textContent = 'Erro no GPS: ' + err.message,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+      navigator.geolocation.watchPosition(
+        (pos)=>updateGeo(pos),
+        (err)=>geoStatus.textContent = 'Erro no GPS: ' + err.message,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
+      );
+    }
+    function updateGeo(pos){
+      lastPosition = pos;
+      const { latitude, longitude, accuracy } = pos.coords;
+      geoEl.textContent = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+      accEl.textContent = accuracy ? `${Math.round(accuracy)} m` : '—';
+      geoStatus.textContent = '';
+    }
+    startGeolocation();
+
+    // ------------------ Câmera / Selfie ------------------
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const camStatus = document.getElementById('camStatus');
+    const btnCamera = document.getElementById('btnCamera');
+    const btnSnap = document.getElementById('btnSnap');
+    const btnRefazer = document.getElementById('btnRefazer');
+
+    let stream = null;
+    let selfieBlob = null;
+
+    function uiCamera(ligada){
+      video.classList.toggle('hidden', !ligada);
+      btnSnap.disabled = !ligada;
+      camStatus.textContent = ligada ? 'Câmera ativa (use a frontal).' : '';
+    }
+    function uiPreview(mostrar){
+      preview.classList.toggle('hidden', !mostrar);
+      btnRefazer.disabled = !mostrar;
+    }
+    function stopStream(){
+      if(stream){
+        stream.getTracks().forEach(t=>t.stop());
+        stream = null;
+      }
+      uiCamera(false);
+    }
+
+    btnCamera.addEventListener('click', async ()=>{
+      try{
+        stopStream();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: {ideal: 1280}, height:{ideal: 720} },
+          audio: false
+        });
+        video.srcObject = stream;
+        await video.play();
+        uiCamera(true);
+        uiPreview(false);
+        selfieBlob = null;
+      }catch(e){
+        camStatus.textContent = 'Não foi possível acessar a câmera: ' + e.message;
+      }
     });
-    html += '</tbody></table>';
-    listDiv.innerHTML = html;
-  } catch(err){
-    listDiv.innerHTML = 'Erro ao carregar registros: ' + err.message;
-  }
-}
-</script>
+
+    btnSnap.addEventListener('click', ()=>{
+      if(!video.srcObject){ camStatus.textContent = 'Ative a câmera primeiro.'; return; }
+      const w = 720;
+      const h = Math.round(video.videoHeight * (w / video.videoWidth)) || 720;
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      // Espelha para parecer selfie
+      ctx.translate(w, 0); ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+      canvas.toBlob(async (blob)=>{
+        selfieBlob = blob;
+        preview.src = URL.createObjectURL(blob);
+        uiPreview(true);
+        stopStream(); // economiza bateria
+      }, 'image/jpeg', 0.9);
+    });
+
+    btnRefazer.addEventListener('click', ()=>{
+      selfieBlob = null;
+      uiPreview(false);
+      btnCamera.click();
+    });
+
+    // ------------------ Montagem da mensagem (só a letra do tipo) ------------------
+    function buildMessage(){
+      const empId = document.getElementById('empId').value.trim();
+      const tipoVal = document.getElementById('tipo').value; // E, I, R, S
+      const when = nowBR().display;
+
+      if(!empId) throw new Error('Informe o ID do funcionário.');
+      if(!lastPosition) throw new Error('Aguardando GPS. Permita a localização.');
+
+      const { latitude, longitude, accuracy } = lastPosition.coords;
+      const parts = [
+        `PONTO DUO`,
+        `ID: ${empId}`,
+        `Tipo: ${tipoVal}`,                  // <- apenas a letra
+        `Data/Hora: ${when}`,
+        `Lat,Lon: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+        `Precisão: ${Math.round(accuracy||0)} m`
+      ];
+      return parts.join('\n');
+    }
+
+    // ------------------ Registrar: abrir WhatsApp p/ número fixo (texto) ------------------
+    document.getElementById('btnRegistrar').addEventListener('click', ()=>{
+      try{
+        const msg = buildMessage();
+        const phone = '5581998968208';
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+        window.location.href = url;
+      }catch(e){
+        alert(e.message);
+      }
+    });
+
+    // ------------------ Compartilhar com FOTO (share sheet -> WhatsApp) ------------------
+    document.getElementById('btnZapFoto').addEventListener('click', async ()=>{
+      try{
+        const msg = buildMessage();
+        if(!selfieBlob) throw new Error('Tire a selfie antes de compartilhar.');
+        const empId = document.getElementById('empId').value.trim();
+        const fileName = `ponto_${empId}_${Date.now()}.jpg`;
+        const file = new File([selfieBlob], fileName, {type:'image/jpeg'});
+
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          await navigator.share({
+            title: 'Ponto DUO',
+            text: msg,
+            files: [file]
+          });
+        }else if(navigator.share){
+          await navigator.share({ title:'Ponto DUO', text: msg });
+        }else{
+          const phone = '5581998968208';
+          const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+          window.location.href = url;
+        }
+      }catch(e){
+        alert(e.message);
+      }
+    });
+
+    // Parar câmera quando sai/oculta
+    window.addEventListener('pagehide', stopStream);
+    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopStream(); });
+  </script>
 </body>
 </html>
