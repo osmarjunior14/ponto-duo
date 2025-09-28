@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Ponto Eletrônico — Registrar (Mobile)</title>
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#0b1220; --muted:#94a3b8; --fg:#e5e7eb; --accent:#22c55e; --danger:#ef4444; --line:#1e293b;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--fg); margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    .app { min-height: 100svh; display:flex; flex-direction:column; }
+    header { padding: 12px 16px; border-bottom: 1px solid var(--line); display:flex; align-items:center; gap:10px; }
+    header .brand { font-weight: 700; font-size: 18px; letter-spacing:.2px; }
+    main { flex:1; display:flex; flex-direction:column; gap:12px; padding:12px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+    label { font-size: 14px; color: var(--muted); display:block; margin-bottom:6px; }
+    input[type="text"] {
+      width:100%; border:1px solid var(--line); background:#0a0f1a; color:var(--fg);
+      padding: 12px; border-radius:12px; font-size: 18px; line-height:1.2; outline:none;
+    }
+    input[type="text"]:focus { border-color:#334155; }
+    .cam-wrap { position: relative; width:100%; border-radius: 14px; overflow:hidden; border:1px solid var(--line); background:#000; }
+    .cam-aspect { aspect-ratio: 3/4; width:100%; display:block; }
+    video, img#preview { position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
+    canvas { display:none; }
+    .overlay-badge { position:absolute; top:8px; left:8px; background:rgba(0,0,0,.5); padding:4px 8px; border-radius:999px; font-size:12px }
+    .info { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
+    .info .cell { background:#0a0f1a; border:1px solid var(--line); border-radius:12px; padding:10px; min-height:54px; }
+    .info .k { font-size:12px; color:var(--muted); }
+    .info .v { font-size:16px; margin-top:2px; }
+    .footer { position: sticky; bottom: 0; background: linear-gradient(0deg, var(--bg) 60%, transparent); padding: 12px; }
+    .btn { appearance:none; border:none; border-radius: 14px; padding: 14px 16px; width:100%; font-weight:700; font-size:18px; }
+    .btn-primary { background: var(--accent); color:#052e14; }
+    .btn-ghost { background: #0a0f1a; border:1px solid var(--line); color: var(--fg); }
+    .btn:disabled { opacity:.6 }
+    .stack { display:flex; flex-direction:column; gap:10px; }
+    .msg { font-size:14px; padding:10px; border-radius:12px; }
+    .msg-ok { background:#052e14; color:#72f2a6; border:1px solid #0e4422; }
+    .msg-err { background:#2a0b0b; color:#ff9aa2; border:1px solid #4a1515; }
+    .landscape-warning { display:none; text-align:center; font-size:14px; color:#fbbf24; }
+    @media (orientation: landscape) { .landscape-warning { display:block; } }
+
+    /* Full-screen success overlay */
+    .success-screen {
+      position: fixed; inset: 0; background: rgba(3, 18, 7, 0.96);
+      display: none; align-items: center; justify-content: center; flex-direction: column;
+      z-index: 9999; text-align: center; padding: 24px;
+    }
+    .success-screen.show { display: flex; }
+    .check {
+      width: 120px; height: 120px; border-radius: 999px; background: #0f3; display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 0 0 8px rgba(34,197,94,0.15), 0 0 40px rgba(34,197,94,0.25);
+      margin-bottom: 18px;
+      animation: pop .35s ease-out;
+    }
+    .check svg { width: 70px; height: 70px; fill: none; stroke: #053d18; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    @keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .success-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    .success-sub { font-size: 14px; color: #9ae6b4; margin-bottom: 18px; }
+    .success-actions { width: 100%; max-width: 360px; display:flex; flex-direction:column; gap:10px; }
+    .btn-close { background:#0a0f1a; color:#e5e7eb; border:1px solid #164e2e; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">Ponto Eletrônico</div>
+    <div style="margin-left:auto;font-size:12px;color:var(--muted)" id="clock">--:--</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <label for="employeeId">ID do funcionário</label>
+      <input id="employeeId" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente números" autocomplete="off" />
+      <div style="margin-top:6px; font-size:12px; color:var(--muted)">Use seu código de identificação.</div>
+    </div>
+
+    <div class="card">
+      <div class="cam-wrap">
+        <div class="cam-aspect"></div>
+        <video id="video" autoplay playsinline muted></video>
+        <img id="preview" alt="Preview" style="display:none" />
+        <span class="overlay-badge" id="camBadge">Câmera ativa</span>
+      </div>
+
+      <div class="stack" style="margin-top:10px">
+        <button class="btn btn-ghost" id="takeBtn" type="button">Tirar/Atualizar Selfie</button>
+        <div class="info">
+          <div class="cell"><div class="k">Data</div><div class="v" id="date">—</div></div>
+          <div class="cell"><div class="k">Hora</div><div class="v" id="time">—</div></div>
+          <div class="cell"><div class="k">Latitude</div><div class="v" id="lat">—</div></div>
+          <div class="cell"><div class="k">Longitude</div><div class="v" id="lon">—</div></div>
+        </div>
+        <div class="landscape-warning">Gire o celular para o modo retrato para melhor uso.</div>
+      </div>
+    </div>
+
+    <div id="status"></div>
+  </main>
+
+  <div class="footer">
+    <button class="btn btn-primary" id="sendBtn" type="button">Registrar Ponto</button>
+  </div>
+</div>
+
+<!-- Success Screen -->
+<div class="success-screen" id="successScreen" role="dialog" aria-live="polite" aria-label="Registro realizado">
+  <div class="check" aria-hidden="true">
+    <svg viewBox="0 0 64 64">
+      <path d="M16 33 L28 45 L48 19" />
+    </svg>
+  </div>
+  <div class="success-title">Registro realizado!</div>
+  <div class="success-sub">Seu ponto foi registrado com sucesso.</div>
+  <div class="success-actions">
+    <button class="btn btn-primary" id="closeNowBtn" type="button">Fechar agora</button>
+    <button class="btn btn btn-close" id="newPunchBtn" type="button">Fazer novo registro</button>
+  </div>
+</div>
+
+<canvas id="canvas" width="720" height="960"></canvas>
+
+<script type="module">
+// -------- Firebase config (substitua pelos seus dados; veja README) --------
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_APIKEY",
+  authDomain: "REPLACE_WITH_YOUR_AUTHDOMAIN",
+  projectId: "REPLACE_WITH_YOUR_PROJECTID",
+  storageBucket: "REPLACE_WITH_YOUR_STORAGEBUCKET",
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId: "REPLACE_WITH_YOUR_APPID"
+};
+
+// Firebase v9 CDN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Elements
+const employeeIdInput = document.getElementById('employeeId');
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const preview = document.getElementById('preview');
+const camBadge = document.getElementById('camBadge');
+const takeBtn = document.getElementById('takeBtn');
+const sendBtn = document.getElementById('sendBtn');
+const statusEl = document.getElementById('status');
+const dateEl = document.getElementById('date');
+const timeEl = document.getElementById('time');
+const latEl  = document.getElementById('lat');
+const lonEl  = document.getElementById('lon');
+const clockEl= document.getElementById('clock');
+const successScreen = document.getElementById('successScreen');
+const closeNowBtn = document.getElementById('closeNowBtn');
+const newPunchBtn = document.getElementById('newPunchBtn');
+
+let currentLat = null, currentLon = null;
+let lastPhotoDataUrl = null;
+let sending = false;
+
+// Clock
+function tick(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  clockEl.textContent = `${hh}:${mm}`;
+  dateEl.textContent = now.toLocaleDateString();
+  timeEl.textContent = `${hh}:${mm}:${ss}`;
+}
+setInterval(tick, 1000); tick();
+
+// Camera
+async function startCamera(){
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+    video.srcObject = stream;
+    camBadge.textContent = 'Câmera ativa';
+  } catch (e){
+    camBadge.textContent = 'Sem acesso à câmera';
+    pushMsg('Não foi possível acessar a câmera. Verifique as permissões.', true);
+  }
+}
+startCamera();
+
+// Geolocation
+function requestLocation(){
+  if(!navigator.geolocation){
+    pushMsg('Geolocalização não suportada neste navegador.', true);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    currentLat = pos.coords.latitude;
+    currentLon = pos.coords.longitude;
+    latEl.textContent = currentLat.toFixed(6);
+    lonEl.textContent = currentLon.toFixed(6);
+  }, (err)=>{
+    pushMsg('Não foi possível obter a localização. Permita a localização no navegador.', true);
+    console.warn(err);
+  }, { enableHighAccuracy:true, timeout:10000 });
+}
+requestLocation();
+
+// Selfie
+takeBtn.addEventListener('click', ()=>{
+  if(!video.videoWidth){
+    pushMsg('Aguarde a câmera iniciar para tirar a selfie.', true);
+    return;
+  }
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+  lastPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  preview.src = lastPhotoDataUrl;
+  preview.style.display = 'block';
+  video.style.display = 'none';
+  camBadge.textContent = 'Selfie pronta';
+});
+
+// Messages
+function pushMsg(text, isError=false){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isError ? 'msg-err':'msg-ok');
+  div.textContent = text;
+  statusEl.innerHTML = '';
+  statusEl.appendChild(div);
+  setTimeout(()=>{ if(div.parentNode){ div.parentNode.removeChild(div); } }, 6000);
+}
+
+// Validate
+function validate(){
+  const id = (employeeIdInput.value||'').trim();
+  if(!id) return 'Informe o ID do funcionário.';
+  if(!lastPhotoDataUrl) return 'Tire uma selfie antes de enviar.';
+  return null;
+}
+
+// Success screen logic
+function showSuccessAndMaybeClose(){
+  // vibrate if supported
+  try { if(navigator.vibrate) navigator.vibrate([60,30,60]); } catch(_){}
+  successScreen.classList.add('show');
+
+  // try to close after 2 seconds (works better if the page was opened from a home-screen shortcut/PWA)
+  const tryClose = () => {
+    window.close();
+  };
+  setTimeout(tryClose, 2000);
+
+  // fallback buttons
+  closeNowBtn.onclick = tryClose;
+  newPunchBtn.onclick = ()=>{
+    successScreen.classList.remove('show');
+    // reset for next punch (keep ID)
+    lastPhotoDataUrl = null;
+    preview.style.display = 'none';
+    video.style.display = 'block';
+    pushMsg('Pronto para novo registro.');
+  };
+}
+
+// Submit
+sendBtn.addEventListener('click', async ()=>{
+  if(sending) return;
+  const err = validate();
+  if(err){ pushMsg(err, true); return; }
+
+  sending = true;
+  const oldText = sendBtn.textContent;
+  sendBtn.textContent = 'Enviando...';
+  sendBtn.disabled = true;
+  try {
+    const now = new Date();
+    const payload = {
+      employeeId: (employeeIdInput.value||'').trim(),
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      timestamp: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+      latitude: currentLat,
+      longitude: currentLon,
+      photoBase64: lastPhotoDataUrl
+    };
+    await addDoc(collection(db, 'pontos'), payload);
+    showSuccessAndMaybeClose();
+  } catch(e){
+    console.error(e);
+    pushMsg('Erro ao enviar: ' + (e.message||e), true);
+  } finally {
+    sending = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = oldText;
+  }
+});
+
+// Prevent pull-to-refresh issues on some Android browsers
+let maybeScrolling = false;
+window.addEventListener('touchstart', ()=> { maybeScrolling = (window.scrollY === 0); }, {passive:true});
+window.addEventListener('touchmove', (e)=>{
+  if(maybeScrolling && e.touches[0].clientY > 0 && window.scrollY === 0){
+    e.preventDefault();
+  }
+}, {passive:false});
+</script>
+</body>
+</html>

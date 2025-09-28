@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ponto Eletrônico — Admin</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:1100px;margin:20px auto;padding:10px}
+    .card{border:1px solid #ddd;padding:12px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+    input,button{font-size:15px;padding:8px;margin-top:6px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #eee;padding:8px;text-align:left}
+    img.thumb{max-width:120px;border-radius:6px}
+    .controls{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <h1>Admin — Visualizar registros</h1>
+  <div class="card">
+    <p class="hint">Faça login para acessar os registros (autenticação via Firebase Email/Password).</p>
+    <div id="authArea" class="card" style="padding:10px">
+      <div id="userInfo"></div>
+      <div id="loginForm">
+        <label>Email (admin):</label><input id="email" placeholder="admin@exemplo.com" />
+        <label>Senha:</label><input id="password" type="password" />
+        <div class="controls"><button id="loginBtn">Entrar</button><button id="createBtn">Criar usuário (use apenas na configuração)</button></div>
+        <div id="authStatus"></div>
+      </div>
+      <div id="logoutArea" style="display:none">
+        <button id="logoutBtn">Sair</button>
+      </div>
+    </div>
+
+    <div id="recordsArea" style="display:none">
+      <h3>Registros recentes</h3>
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script type="module">
+// ----------- IMPORTANT --------------
+// You MUST replace the firebaseConfig object below with your Firebase web app config.
+// See README.md for step-by-step instructions.
+// ------------------------------------
+
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_APIKEY",
+  authDomain: "REPLACE_WITH_YOUR_AUTHDOMAIN",
+  projectId: "REPLACE_WITH_YOUR_PROJECTID",
+  storageBucket: "REPLACE_WITH_YOUR_STORAGEBUCKET",
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId: "REPLACE_WITH_YOUR_APPID"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// elements
+const emailEl = document.getElementById('email');
+const passEl = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const createBtn = document.getElementById('createBtn');
+const authStatus = document.getElementById('authStatus');
+const userInfo = document.getElementById('userInfo');
+const logoutBtn = document.getElementById('logoutBtn');
+const logoutArea = document.getElementById('logoutArea');
+const recordsArea = document.getElementById('recordsArea');
+const listDiv = document.getElementById('list');
+
+loginBtn.addEventListener('click', async ()=>{
+  authStatus.textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, emailEl.value, passEl.value);
+  } catch(err){
+    authStatus.textContent = 'Erro no login: ' + err.message;
+  }
+});
+
+createBtn.addEventListener('click', async ()=>{
+  const email = prompt('Email do novo usuário (admin):', emailEl.value || 'admin@exemplo.com');
+  const pass = prompt('Senha do novo usuário (guarde bem):', passEl.value || 'Senha@1234');
+  if(!email || !pass) return;
+  try {
+    await createUserWithEmailAndPassword(auth, email, pass);
+    alert('Usuário criado com sucesso. Use-o para login.');
+  } catch(err){
+    alert('Erro ao criar usuário: ' + err.message);
+  }
+});
+
+logoutBtn.addEventListener('click', ()=> signOut(auth));
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    userInfo.textContent = 'Conectado como: ' + (user.email || user.uid);
+    logoutArea.style.display = 'block';
+    recordsArea.style.display = 'block';
+    document.getElementById('loginForm').style.display = 'none';
+    authStatus.textContent = '';
+    await loadRecords();
+  } else {
+    userInfo.textContent = '';
+    logoutArea.style.display = 'none';
+    recordsArea.style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    listDiv.innerHTML = '';
+  }
+});
+
+async function loadRecords(){
+  listDiv.innerHTML = '<em>Carregando...</em>';
+  try {
+    const col = collection(db, 'pontos');
+    const q = query(col, orderBy('timestamp', 'desc'), limit(200));
+    const snap = await getDocs(q);
+    if(snap.empty){
+      listDiv.innerHTML = '<div>Nenhum registro encontrado.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>ID</th><th>Data</th><th>Hora</th><th>Lat</th><th>Lon</th><th>Foto</th></tr></thead><tbody>';
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const id = d.employeeId || '';
+      const date = d.date || '';
+      const time = d.time || '';
+      const lat = d.latitude || '';
+      const lon = d.longitude || '';
+      const photo = d.photoBase64 || '';
+      const imgTag = photo ? `<a href="${photo}" target="_blank"><img class="thumb" src="${photo}" /></a>` : '';
+      html += `<tr><td>${id}</td><td>${date}</td><td>${time}</td><td>${lat}</td><td>${lon}</td><td>${imgTag}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    listDiv.innerHTML = html;
+  } catch(err){
+    listDiv.innerHTML = 'Erro ao carregar registros: ' + err.message;
+  }
+}
+</script>
+</body>
+</html>
