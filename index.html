@@ -228,4 +228,69 @@
     // ------------------ Montagem da mensagem ------------------
     function buildMessage(){
       const empId = document.getElementById('empId').value.trim();
-      const tipo = do
+      const tipo = document.getElementById('tipo').value;
+      const when = nowBR().display;
+
+      if(!empId) throw new Error('Informe o ID do funcionário.');
+      if(!lastPosition) throw new Error('Aguardando GPS. Permita a localização.');
+
+      const { latitude, longitude, accuracy } = lastPosition.coords;
+      const parts = [
+        `PONTO DUO`,
+        `ID: ${empId}`,
+        `Tipo: ${tipo}`,
+        `Data/Hora: ${when}`,
+        `Lat,Lon: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+        `Precisão: ${Math.round(accuracy||0)} m`
+      ];
+      return parts.join('\n');
+    }
+
+    // ------------------ Registrar: abrir WhatsApp p/ número fixo (texto) ------------------
+    document.getElementById('btnRegistrar').addEventListener('click', ()=>{
+      try{
+        const msg = buildMessage();
+        // Observação: WhatsApp via URL NÃO aceita anexar imagem automaticamente.
+        const phone = '5581998968208';
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+        window.location.href = url;
+      }catch(e){
+        alert(e.message);
+      }
+    });
+
+    // ------------------ Compartilhar com FOTO (share sheet -> WhatsApp) ------------------
+    document.getElementById('btnZapFoto').addEventListener('click', async ()=>{
+      try{
+        const msg = buildMessage();
+        if(!selfieBlob) throw new Error('Tire a selfie antes de compartilhar.');
+        const empId = document.getElementById('empId').value.trim();
+        const fileName = `ponto_${empId}_${Date.now()}.jpg`;
+        const file = new File([selfieBlob], fileName, {type:'image/jpeg'});
+
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          await navigator.share({
+            title: 'Ponto DUO',
+            text: msg,
+            files: [file]
+          });
+        }else if(navigator.share){
+          // Alguns navegadores aceitam share sem files; cai para texto
+          await navigator.share({ title:'Ponto DUO', text: msg });
+        }else{
+          // Fallback final: abrir WhatsApp com texto
+          const phone = '5581998968208';
+          const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+          window.location.href = url;
+        }
+      }catch(e){
+        alert(e.message);
+      }
+    });
+
+    // Melhoria UX: se o usuário voltar para a página, garantir que câmera pare
+    window.addEventListener('pagehide', stopStream);
+    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopStream(); });
+  </script>
+</body>
+</html>
