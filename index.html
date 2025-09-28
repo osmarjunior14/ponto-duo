@@ -2,312 +2,230 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Ponto Eletrônico — Registrar (Mobile)</title>
-  <meta name="theme-color" content="#0f172a">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Ponto Eletrônico – DUO</title>
+  <meta name="theme-color" content="#0f172a" />
   <style>
     :root{
-      --bg:#0f172a; --panel:#0b1220; --muted:#94a3b8; --fg:#e5e7eb; --accent:#22c55e; --danger:#ef4444; --line:#1e293b;
+      --bg:#0f172a; --panel:#111827; --ink:#e5e7eb; --muted:#94a3b8;
+      --line:#1f2937; --brand:#22c55e; --danger:#ef4444;
     }
-    html, body { height: 100%; background: var(--bg); color: var(--fg); margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    .app { min-height: 100svh; display:flex; flex-direction:column; }
-    header { padding: 12px 16px; border-bottom: 1px solid var(--line); display:flex; align-items:center; gap:10px; }
-    header .brand { font-weight: 700; font-size: 18px; letter-spacing:.2px; }
-    main { flex:1; display:flex; flex-direction:column; gap:12px; padding:12px; }
-    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
-    label { font-size: 14px; color: var(--muted); display:block; margin-bottom:6px; }
-    input[type="text"] {
-      width:100%; border:1px solid var(--line); background:#0a0f1a; color:var(--fg);
-      padding: 12px; border-radius:12px; font-size: 18px; line-height:1.2; outline:none;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:var(--bg); color:var(--ink); -webkit-tap-highlight-color:transparent;
     }
-    input[type="text"]:focus { border-color:#334155; }
-    .cam-wrap { position: relative; width:100%; border-radius: 14px; overflow:hidden; border:1px solid var(--line); background:#000; }
-    .cam-aspect { aspect-ratio: 3/4; width:100%; display:block; }
-    video, img#preview { position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
-    canvas { display:none; }
-    .overlay-badge { position:absolute; top:8px; left:8px; background:rgba(0,0,0,.5); padding:4px 8px; border-radius:999px; font-size:12px }
-    .info { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
-    .info .cell { background:#0a0f1a; border:1px solid var(--line); border-radius:12px; padding:10px; min-height:54px; }
-    .info .k { font-size:12px; color:var(--muted); }
-    .info .v { font-size:16px; margin-top:2px; }
-    .footer { position: sticky; bottom: 0; background: linear-gradient(0deg, var(--bg) 60%, transparent); padding: 12px; }
-    .btn { appearance:none; border:none; border-radius: 14px; padding: 14px 16px; width:100%; font-weight:700; font-size:18px; }
-    .btn-primary { background: var(--accent); color:#052e14; }
-    .btn-ghost { background: #0a0f1a; border:1px solid var(--line); color: var(--fg); }
-    .btn:disabled { opacity:.6 }
-    .stack { display:flex; flex-direction:column; gap:10px; }
-    .msg { font-size:14px; padding:10px; border-radius:12px; }
-    .msg-ok { background:#052e14; color:#72f2a6; border:1px solid #0e4422; }
-    .msg-err { background:#2a0b0b; color:#ff9aa2; border:1px solid #4a1515; }
-    .landscape-warning { display:none; text-align:center; font-size:14px; color:#fbbf24; }
-    @media (orientation: landscape) { .landscape-warning { display:block; } }
-
-    /* Full-screen success overlay */
-    .success-screen {
-      position: fixed; inset: 0; background: rgba(3, 18, 7, 0.96);
-      display: none; align-items: center; justify-content: center; flex-direction: column;
-      z-index: 9999; text-align: center; padding: 24px;
+    .wrap{max-width:640px;margin:0 auto;padding:16px}
+    .card{
+      background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
-    .success-screen.show { display: flex; }
-    .check {
-      width: 120px; height: 120px; border-radius: 999px; background: #0f3; display:flex; align-items:center; justify-content:center;
-      box-shadow: 0 0 0 8px rgba(34,197,94,0.15), 0 0 40px rgba(34,197,94,0.25);
-      margin-bottom: 18px;
-      animation: pop .35s ease-out;
+    h1{font-size:1.25rem;margin:0 0 12px}
+    .row{display:grid;gap:12px;margin:12px 0}
+    .grid-2{grid-template-columns:1fr 1fr}
+    label{font-size:.9rem;color:var(--muted)}
+    input, select{
+      width:100%; background:#0b1220; color:var(--ink);
+      border:1px solid var(--line); border-radius:12px; padding:12px; font-size:1rem;
+      outline:none;
     }
-    .check svg { width: 70px; height: 70px; fill: none; stroke: #053d18; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
-    @keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .success-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
-    .success-sub { font-size: 14px; color: #9ae6b4; margin-bottom: 18px; }
-    .success-actions { width: 100%; max-width: 360px; display:flex; flex-direction:column; gap:10px; }
-    .btn-close { background:#0a0f1a; color:#e5e7eb; border:1px solid #164e2e; }
+    input:focus, select:focus{border-color:#334155}
+    .help{font-size:.8rem;color:var(--muted)}
+    .btn{
+      appearance:none; border:0; border-radius:14px; padding:14px 16px; font-size:1rem; font-weight:600; width:100%;
+      cursor:pointer; transition:transform .04s ease, opacity .2s ease;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:var(--brand); color:#052e13}
+    .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--ink)}
+    .btn.danger{background:var(--danger)}
+    video, canvas, img{width:100%; border-radius:14px; background:#000}
+    .status{font-size:.85rem;color:var(--muted);margin-top:6px;min-height:1.2em}
+    .pill{display:inline-block;background:#0b1220;border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:.75rem;color:var(--muted)}
+    .footer{margin-top:16px;text-align:center;font-size:.75rem;color:var(--muted)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .hidden{display:none !important}
   </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="brand">Ponto Eletrônico</div>
-    <div style="margin-left:auto;font-size:12px;color:var(--muted)" id="clock">--:--</div>
-  </header>
-
-  <main>
+  <div class="wrap">
     <div class="card">
-      <label for="employeeId">ID do funcionário</label>
-      <input id="employeeId" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente números" autocomplete="off" />
-      <div style="margin-top:6px; font-size:12px; color:var(--muted)">Use seu código de identificação.</div>
-    </div>
-
-    <div class="card">
-      <div class="cam-wrap">
-        <div class="cam-aspect"></div>
-        <video id="video" autoplay playsinline muted></video>
-        <img id="preview" alt="Preview" style="display:none" />
-        <span class="overlay-badge" id="camBadge">Câmera ativa</span>
-      </div>
-
-      <div class="stack" style="margin-top:10px">
-        <button class="btn btn-ghost" id="takeBtn" type="button">Tirar/Atualizar Selfie</button>
-        <div class="info">
-          <div class="cell"><div class="k">Data</div><div class="v" id="date">—</div></div>
-          <div class="cell"><div class="k">Hora</div><div class="v" id="time">—</div></div>
-          <div class="cell"><div class="k">Latitude</div><div class="v" id="lat">—</div></div>
-          <div class="cell"><div class="k">Longitude</div><div class="v" id="lon">—</div></div>
+      <h1>📍 Ponto Eletrônico (DUO)</h1>
+      <div class="row">
+        <div>
+          <label for="empId">ID do funcionário</label>
+          <input id="empId" type="text" inputmode="numeric" placeholder="Ex.: 123" autocomplete="off" />
         </div>
-        <div class="landscape-warning">Gire o celular para o modo retrato para melhor uso.</div>
+        <div>
+          <label for="tipo">Tipo de registro</label>
+          <select id="tipo">
+            <option value="E">Entrada</option>
+            <option value="I">Início intervalo</option>
+            <option value="R">Retorno intervalo</option>
+            <option value="S">Saída</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="pill" id="clock">--/--/---- --:--:--</div>
+      </div>
+
+      <div class="row">
+        <label>Câmera (selfie)</label>
+        <video id="video" playsinline autoplay muted class="hidden"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <img id="preview" alt="Prévia da selfie" class="hidden" />
+        <div class="flex">
+          <button class="btn ghost" id="btnCamera">Ativar câmera</button>
+          <button class="btn" id="btnSnap">Tirar selfie</button>
+          <button class="btn danger" id="btnRefazer">Refazer</button>
+        </div>
+        <div class="status" id="camStatus"></div>
+      </div>
+
+      <div class="row grid-2">
+        <div>
+          <label>Localização</label>
+          <div class="pill" id="geo">Aguardando GPS…</div>
+          <div class="status" id="geoStatus"></div>
+        </div>
+        <div>
+          <label>Precisão</label>
+          <div class="pill" id="acc">—</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" id="btnRegistrar">Registrar ponto</button>
+        <button class="btn ghost" id="btnZapFoto">Enviar via WhatsApp (com foto)</button>
+        <div class="help">Sem servidor: o envio sempre pedirá 1 toque de confirmação no WhatsApp.</div>
       </div>
     </div>
-
-    <div id="status"></div>
-  </main>
-
-  <div class="footer">
-    <button class="btn btn-primary" id="sendBtn" type="button">Registrar Ponto</button>
+    <div class="footer">Feito para rodar em GitHub Pages (somente cliente). Nenhum dado é salvo no servidor.</div>
   </div>
-</div>
 
-<!-- Success Screen -->
-<div class="success-screen" id="successScreen" role="dialog" aria-live="polite" aria-label="Registro realizado">
-  <div class="check" aria-hidden="true">
-    <svg viewBox="0 0 64 64">
-      <path d="M16 33 L28 45 L48 19" />
-    </svg>
-  </div>
-  <div class="success-title">Registro realizado!</div>
-  <div class="success-sub">Seu ponto foi registrado com sucesso.</div>
-  <div class="success-actions">
-    <button class="btn btn-primary" id="closeNowBtn" type="button">Fechar agora</button>
-    <button class="btn btn btn-close" id="newPunchBtn" type="button">Fazer novo registro</button>
-  </div>
-</div>
+  <script>
+    // ------------------ Relógio ao vivo ------------------
+    const clockEl = document.getElementById('clock');
+    function pad(n){return String(n).padStart(2,'0')}
+    function nowBR(){
+      const d = new Date();
+      const dd = pad(d.getDate());
+      const mm = pad(d.getMonth()+1);
+      const yyyy = d.getFullYear();
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      const ss = pad(d.getSeconds());
+      return {display: `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`, iso: d.toISOString()};
+    }
+    setInterval(()=>{ clockEl.textContent = nowBR().display; }, 500);
 
-<canvas id="canvas" width="720" height="960"></canvas>
+    // ------------------ Geolocalização ------------------
+    const geoEl = document.getElementById('geo');
+    const accEl = document.getElementById('acc');
+    const geoStatus = document.getElementById('geoStatus');
 
-<script type="module">
-// -------- Firebase config (substitua pelos seus dados; veja README) --------
-const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_APIKEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTHDOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECTID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGEBUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APPID"
-};
+    let lastPosition = null;
+    function startGeolocation(){
+      if(!('geolocation' in navigator)){
+        geoStatus.textContent = 'Geolocalização não suportada neste dispositivo.';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>updateGeo(pos),
+        (err)=>geoStatus.textContent = 'Erro no GPS: ' + err.message,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+      navigator.geolocation.watchPosition(
+        (pos)=>updateGeo(pos),
+        (err)=>geoStatus.textContent = 'Erro no GPS: ' + err.message,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
+      );
+    }
+    function updateGeo(pos){
+      lastPosition = pos;
+      const { latitude, longitude, accuracy } = pos.coords;
+      geoEl.textContent = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+      accEl.textContent = accuracy ? `${Math.round(accuracy)} m` : '—';
+      geoStatus.textContent = '';
+    }
+    startGeolocation();
 
-// Firebase v9 CDN
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    // ------------------ Câmera / Selfie ------------------
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const camStatus = document.getElementById('camStatus');
+    const btnCamera = document.getElementById('btnCamera');
+    const btnSnap = document.getElementById('btnSnap');
+    const btnRefazer = document.getElementById('btnRefazer');
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    let stream = null;
+    let selfieBlob = null;
 
-// Elements
-const employeeIdInput = document.getElementById('employeeId');
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const preview = document.getElementById('preview');
-const camBadge = document.getElementById('camBadge');
-const takeBtn = document.getElementById('takeBtn');
-const sendBtn = document.getElementById('sendBtn');
-const statusEl = document.getElementById('status');
-const dateEl = document.getElementById('date');
-const timeEl = document.getElementById('time');
-const latEl  = document.getElementById('lat');
-const lonEl  = document.getElementById('lon');
-const clockEl= document.getElementById('clock');
-const successScreen = document.getElementById('successScreen');
-const closeNowBtn = document.getElementById('closeNowBtn');
-const newPunchBtn = document.getElementById('newPunchBtn');
+    function uiCamera(ligada){
+      video.classList.toggle('hidden', !ligada);
+      btnSnap.disabled = !ligada;
+      camStatus.textContent = ligada ? 'Câmera ativa (use a frontal).' : '';
+    }
+    function uiPreview(mostrar){
+      preview.classList.toggle('hidden', !mostrar);
+      btnRefazer.disabled = !mostrar;
+    }
+    function stopStream(){
+      if(stream){
+        stream.getTracks().forEach(t=>t.stop());
+        stream = null;
+      }
+      uiCamera(false);
+    }
 
-let currentLat = null, currentLon = null;
-let lastPhotoDataUrl = null;
-let sending = false;
+    btnCamera.addEventListener('click', async ()=>{
+      try{
+        stopStream();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: {ideal: 1280}, height:{ideal: 720} },
+          audio: false
+        });
+        video.srcObject = stream;
+        await video.play();
+        uiCamera(true);
+        uiPreview(false);
+        selfieBlob = null;
+      }catch(e){
+        camStatus.textContent = 'Não foi possível acessar a câmera: ' + e.message;
+      }
+    });
 
-// Clock
-function tick(){
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2,'0');
-  const mm = String(now.getMinutes()).padStart(2,'0');
-  const ss = String(now.getSeconds()).padStart(2,'0');
-  clockEl.textContent = `${hh}:${mm}`;
-  dateEl.textContent = now.toLocaleDateString();
-  timeEl.textContent = `${hh}:${mm}:${ss}`;
-}
-setInterval(tick, 1000); tick();
+    btnSnap.addEventListener('click', ()=>{
+      if(!video.srcObject){ camStatus.textContent = 'Ative a câmera primeiro.'; return; }
+      const w = 720;
+      const h = Math.round(video.videoHeight * (w / video.videoWidth)) || 720;
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      // Espelha para parecer selfie
+      ctx.translate(w, 0); ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+      canvas.toBlob(async (blob)=>{
+        selfieBlob = blob;
+        // Prévia
+        preview.src = URL.createObjectURL(blob);
+        uiPreview(true);
+        // opcional: parar a câmera para economizar bateria
+        stopStream();
+      }, 'image/jpeg', 0.9);
+    });
 
-// Camera
-async function startCamera(){
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-    video.srcObject = stream;
-    camBadge.textContent = 'Câmera ativa';
-  } catch (e){
-    camBadge.textContent = 'Sem acesso à câmera';
-    pushMsg('Não foi possível acessar a câmera. Verifique as permissões.', true);
-  }
-}
-startCamera();
+    btnRefazer.addEventListener('click', ()=>{
+      selfieBlob = null;
+      uiPreview(false);
+      btnCamera.click();
+    });
 
-// Geolocation
-function requestLocation(){
-  if(!navigator.geolocation){
-    pushMsg('Geolocalização não suportada neste navegador.', true);
-    return;
-  }
-  navigator.geolocation.getCurrentPosition((pos)=>{
-    currentLat = pos.coords.latitude;
-    currentLon = pos.coords.longitude;
-    latEl.textContent = currentLat.toFixed(6);
-    lonEl.textContent = currentLon.toFixed(6);
-  }, (err)=>{
-    pushMsg('Não foi possível obter a localização. Permita a localização no navegador.', true);
-    console.warn(err);
-  }, { enableHighAccuracy:true, timeout:10000 });
-}
-requestLocation();
-
-// Selfie
-takeBtn.addEventListener('click', ()=>{
-  if(!video.videoWidth){
-    pushMsg('Aguarde a câmera iniciar para tirar a selfie.', true);
-    return;
-  }
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
-  lastPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-  preview.src = lastPhotoDataUrl;
-  preview.style.display = 'block';
-  video.style.display = 'none';
-  camBadge.textContent = 'Selfie pronta';
-});
-
-// Messages
-function pushMsg(text, isError=false){
-  const div = document.createElement('div');
-  div.className = 'msg ' + (isError ? 'msg-err':'msg-ok');
-  div.textContent = text;
-  statusEl.innerHTML = '';
-  statusEl.appendChild(div);
-  setTimeout(()=>{ if(div.parentNode){ div.parentNode.removeChild(div); } }, 6000);
-}
-
-// Validate
-function validate(){
-  const id = (employeeIdInput.value||'').trim();
-  if(!id) return 'Informe o ID do funcionário.';
-  if(!lastPhotoDataUrl) return 'Tire uma selfie antes de enviar.';
-  return null;
-}
-
-// Success screen logic
-function showSuccessAndMaybeClose(){
-  // vibrate if supported
-  try { if(navigator.vibrate) navigator.vibrate([60,30,60]); } catch(_){}
-  successScreen.classList.add('show');
-
-  // try to close after 2 seconds (works better if the page was opened from a home-screen shortcut/PWA)
-  const tryClose = () => {
-    window.close();
-  };
-  setTimeout(tryClose, 2000);
-
-  // fallback buttons
-  closeNowBtn.onclick = tryClose;
-  newPunchBtn.onclick = ()=>{
-    successScreen.classList.remove('show');
-    // reset for next punch (keep ID)
-    lastPhotoDataUrl = null;
-    preview.style.display = 'none';
-    video.style.display = 'block';
-    pushMsg('Pronto para novo registro.');
-  };
-}
-
-// Submit
-sendBtn.addEventListener('click', async ()=>{
-  if(sending) return;
-  const err = validate();
-  if(err){ pushMsg(err, true); return; }
-
-  sending = true;
-  const oldText = sendBtn.textContent;
-  sendBtn.textContent = 'Enviando...';
-  sendBtn.disabled = true;
-  try {
-    const now = new Date();
-    const payload = {
-      employeeId: (employeeIdInput.value||'').trim(),
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
-      timestamp: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
-      latitude: currentLat,
-      longitude: currentLon,
-      photoBase64: lastPhotoDataUrl
-    };
-    await addDoc(collection(db, 'pontos'), payload);
-    showSuccessAndMaybeClose();
-  } catch(e){
-    console.error(e);
-    pushMsg('Erro ao enviar: ' + (e.message||e), true);
-  } finally {
-    sending = false;
-    sendBtn.disabled = false;
-    sendBtn.textContent = oldText;
-  }
-});
-
-// Prevent pull-to-refresh issues on some Android browsers
-let maybeScrolling = false;
-window.addEventListener('touchstart', ()=> { maybeScrolling = (window.scrollY === 0); }, {passive:true});
-window.addEventListener('touchmove', (e)=>{
-  if(maybeScrolling && e.touches[0].clientY > 0 && window.scrollY === 0){
-    e.preventDefault();
-  }
-}, {passive:false});
-</script>
-</body>
-</html>
+    // ------------------ Montagem da mensagem ------------------
+    function buildMessage(){
+      const empId = document.getElementById('empId').value.trim();
+      const tipo = do
